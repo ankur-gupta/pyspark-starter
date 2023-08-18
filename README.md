@@ -334,7 +334,7 @@ aws s3 ls --no-sign-request s3://aws-roda-hcls-datalake/gnomad/chrm/
 
 Now, let's run `fail_s3_spark.py` and see the failure. 
 ```shell
-python fail_s3_spark.py
+python fail_s3_spark_1.py
 # 23/08/17 22:47:32 WARN FileStreamSink: Assume no metadata directory. Error while looking for metadata directory in the path: s3a://aws-roda-hcls-datalake/gnomad/chrm/*.parquet.
 # java.lang.RuntimeException: java.lang.ClassNotFoundException: Class org.apache.hadoop.fs.s3a.S3AFileSystem not found
 # 	at org.apache.hadoop.conf.Configuration.getClass(Configuration.java:2688)
@@ -348,16 +348,101 @@ start the pyspark session with the relevant jars. We don't need to download the 
 the maven coordinates of the jars in the correct format. Most importantly, we need to find the correct version 
 of `org.apache.hadoop:hadoop-aws` jar.
 
-https://central.sonatype.com/artifact/org.apache.spark/spark-core_2.12/3.4.1
+### Second attempt at reading parquet from S3
+In order to find a compatible `org.apache.hadoop:hadoop-aws` jar, let's check the 
+Maven [dependency page for `spark-core_2.12:3.4.1`](https://central.sonatype.com/artifact/org.apache.spark/spark-core_2.12/3.4.1).
+This lists `hadoop-aws` as a dependency along with its version: `pkg:maven/org.apache.hadoop/hadoop-aws@3.3.4` 
+You can see the page for [`org.apache.hadoop:hadoop-aws:3.3.4`](https://central.sonatype.com/artifact/org.apache.hadoop/hadoop-aws/3.3.4).
 
-https://central.sonatype.com/artifact/org.apache.hadoop/hadoop-aws/3.3.4
+We add `org.apache.hadoop:hadoop-aws:3.3.4` to `PYSPARK_SUBMIT_ARGS` in `still_fails_s3_spark.py` and run it.
+Remember we need `s3a://`; `s3://` will not work.
+```shell
+python fail_s3_spark_2.py
+# :: loading settings :: url = jar:file:/Users/ankur/.virtualenvs/pyspark/lib/python3.11/site-packages/pyspark/jars/ivy-2.5.1.jar!/org/apache/ivy/core/settings/ivysettings.xml
+# Ivy Default Cache set to: /Users/ankur/.ivy2/cache
+# The jars for the packages stored in: /Users/ankur/.ivy2/jars
+# org.apache.hadoop#hadoop-aws added as a dependency
+# :: resolving dependencies :: org.apache.spark#spark-submit-parent-955a920e-a5db-4ed3-9816-4bd112f1aee3;1.0
+# 	confs: [default]
+# 	found org.apache.hadoop#hadoop-aws;3.3.4 in central
+# 	found com.amazonaws#aws-java-sdk-bundle;1.12.262 in central
+# 	found org.wildfly.openssl#wildfly-openssl;1.0.7.Final in central
+# downloading https://repo1.maven.org/maven2/org/apache/hadoop/hadoop-aws/3.3.4/hadoop-aws-3.3.4.jar ...
+# 	[SUCCESSFUL ] org.apache.hadoop#hadoop-aws;3.3.4!hadoop-aws.jar (113ms)
+# downloading https://repo1.maven.org/maven2/com/amazonaws/aws-java-sdk-bundle/1.12.262/aws-java-sdk-bundle-1.12.262.jar ...
+# 	[SUCCESSFUL ] com.amazonaws#aws-java-sdk-bundle;1.12.262!aws-java-sdk-bundle.jar (29793ms)
+# downloading https://repo1.maven.org/maven2/org/wildfly/openssl/wildfly-openssl/1.0.7.Final/wildfly-openssl-1.0.7.Final.jar ...
+# 	[SUCCESSFUL ] org.wildfly.openssl#wildfly-openssl;1.0.7.Final!wildfly-openssl.jar (67ms)
+# :: resolution report :: resolve 1255ms :: artifacts dl 29980ms
+# 	:: modules in use:
+# 	com.amazonaws#aws-java-sdk-bundle;1.12.262 from central in [default]
+# 	org.apache.hadoop#hadoop-aws;3.3.4 from central in [default]
+#	org.wildfly.openssl#wildfly-openssl;1.0.7.Final from central in [default]
+#	---------------------------------------------------------------------
+#	|                  |            modules            ||   artifacts   |
+#	|       conf       | number| search|dwnlded|evicted|| number|dwnlded|
+#	---------------------------------------------------------------------
+#	|      default     |   3   |   3   |   3   |   0   ||   3   |   3   |
+#	---------------------------------------------------------------------
+# :: retrieving :: org.apache.spark#spark-submit-parent-955a920e-a5db-4ed3-9816-4bd112f1aee3
+#	confs: [default]
+#	3 artifacts copied, 0 already retrieved (275421kB/300ms)
+# 23/08/17 22:56:36 WARN NativeCodeLoader: Unable to load native-hadoop library for your platform... using builtin-java classes where applicable
+# Setting default log level to "WARN".
+# To adjust logging level use sc.setLogLevel(newLevel). For SparkR, use setLogLevel(newLevel).
+# 23/08/17 22:56:38 WARN MetricsConfig: Cannot locate configuration: tried hadoop-metrics2-s3a-file-system.properties,hadoop-metrics2.properties
+# 23/08/17 22:56:40 WARN FileStreamSink: Assume no metadata directory. Error while looking for metadata directory in the path: s3a://aws-roda-hcls-datalake/gnomad/chrm/*.parquet.
+# java.nio.file.AccessDeniedException: s3a://aws-roda-hcls-datalake/gnomad/chrm/*.parquet: 
+# org.apache.hadoop.fs.s3a.auth.NoAuthWithAWSException: No AWS Credentials provided by TemporaryAWSCredentialsProvider 
+# SimpleAWSCredentialsProvider EnvironmentVariableCredentialsProvider IAMInstanceCredentialsProvider : 
+# com.amazonaws.SdkClientException: Unable to load AWS credentials from environment variables 
+# (AWS_ACCESS_KEY_ID (or AWS_ACCESS_KEY) and AWS_SECRET_KEY (or AWS_SECRET_ACCESS_KEY))
+# ...
+# Caused by: com.amazonaws.SdkClientException: Unable to load AWS credentials from environment variables 
+# (AWS_ACCESS_KEY_ID (or AWS_ACCESS_KEY) and AWS_SECRET_KEY (or AWS_SECRET_ACCESS_KEY))
+# ...
+```
+It still fails but this time the error is different. We're making progress. 
+Before we fix the error, please note a few things 
+1. JARs were downloaded from https://repo1.maven.org
+2. JARs were stored in `/Users/ankur/.ivy2/jars`
+3. Ivy Default Cache set to: `/Users/ankur/.ivy2/cache`
 
+After fixing errors, sometimes, you may have multiple versions of the same jar stored. In this case, you may
+need to delete the `$HOME/.ivy2` directory. This will force all jars to be re-downloaded, which can take a long time but 
+may be necessary.
 
+### Third attempt
+Let's add our AWS access and secret keys. 
+```shell
+python fail_s3_spark_3.py
+# ...
+# java.nio.file.AccessDeniedException: s3a://aws-roda-hcls-datalake/gnomad/chrm/*.parquet: 
+# getFileStatus on s3a://aws-roda-hcls-datalake/gnomad/chrm/*.parquet: 
+# com.amazonaws.services.s3.model.AmazonS3Exception: The AWS Access Key Id you provided does not exist in our records. 
+# (Service: Amazon S3; Status Code: 403; Error Code: InvalidAccessKeyId; Request ID: 9Q..R3; 
+# S3 Extended Request ID: j1P/ay..Jk=; Proxy: null), S3 Extended Request ID: j1P/..Jk=:InvalidAccessKeyId
+# ...
+# py4j.protocol.Py4JJavaError: An error occurred while calling o29.parquet.
+# ...
+```
 
+This is a poorly phrased error which can send us down the wrong rabbit hole. Turns out, we just need to 
+[add a session token](https://stackoverflow.com/a/47479139/4383754) as well.
 
-### Use pyspark with packages
- We specify these dependencies (jars) in `run_s3_spark.py` itself.
-
-Find the correct Maven coordinates for the jars is extremely important.
-
-
+### Works
+Let's add our AWS access key, AWS secret key, and AWS session token.
+```shell
+python run_s3_spark.py
+# 23/08/17 23:23:16 WARN MetricsConfig: Cannot locate configuration: tried hadoop-metrics2-s3a-file-system.properties,hadoop-metrics2.properties
+# +-----------+-----+-------------+
+# |       rsid| qual|      alleles|
+# +-----------+-----+-------------+
+# |rs199474658|-10.0|       [T, C]|
+# |       null|-10.0|       [A, G]|
+# |       null|-10.0|[CCCCCTCT, C]|
+# |       null|-10.0|       [G, A]|
+# |       null|-10.0|       [A, T]|
+# +-----------+-----+-------------+
+# only showing top 5 rows
+```

@@ -7,7 +7,7 @@ SPARK_PACKAGES = [
     # From
     # https://central.sonatype.com/artifact/org.apache.spark/spark-core_2.12/3.4.1/dependencies
     # https://central.sonatype.com/artifact/org.apache.hadoop/hadoop-aws/3.3.4
-    'org.apache.hadoop:hadoop-aws:3.3.4'
+    'org.apache.hadoop:hadoop-aws:3.3.4'  # For S3
 ]
 os.environ['PYSPARK_SUBMIT_ARGS'] = f'--packages {",".join(SPARK_PACKAGES)} pyspark-shell'
 spark = SparkSession.builder.appName('PySparkShell').getOrCreate()
