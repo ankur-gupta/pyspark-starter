@@ -13,7 +13,12 @@
   * [Install `pyspark`](#install-pyspark)
     * [Create a virtual environment](#create-a-virtual-environment)
     * [Install `pyspark` and other dependencies](#install-pyspark-and-other-dependencies)
-  * [Test out basic pyspark run](#test-out-basic-pyspark-run)
+  * [Run pyspark without any extra packages](#run-pyspark-without-any-extra-packages)
+  * [Failures](#failures)
+    * [Try to read parquet from S3](#try-to-read-parquet-from-s3)
+    * [Second attempt at reading parquet from S3](#second-attempt-at-reading-parquet-from-s3)
+    * [Third attempt](#third-attempt)
+  * [Works](#works)
 <!-- TOC -->
 
 Running PySpark requires is difficult because it requires three components:
@@ -430,7 +435,7 @@ python fail_s3_spark_3.py
 This is a poorly phrased error which can send us down the wrong rabbit hole. Turns out, we just need to 
 [add a session token](https://stackoverflow.com/a/47479139/4383754) as well.
 
-### Works
+## Works
 Let's add our AWS access key, AWS secret key, and AWS session token.
 ```shell
 python run_s3_spark.py
