@@ -1,4 +1,21 @@
 # PySpark Starter
+
+<!-- TOC -->
+* [PySpark Starter](#pyspark-starter)
+  * [Get the Maven coordinates for Spark](#get-the-maven-coordinates-for-spark)
+  * [Find Java & Python versions](#find-java--python-versions)
+  * [Install Java](#install-java)
+    * [MacOS (Apple Silicon)](#macos-apple-silicon)
+      * [Note `JAVA_HOME`](#note-javahome)
+  * [Install Python](#install-python)
+    * [MacOS (Apple Silicon)](#macos-apple-silicon-1)
+  * [Scala does not need to be explicitly installed](#scala-does-not-need-to-be-explicitly-installed)
+  * [Install `pyspark`](#install-pyspark)
+    * [Create a virtual environment](#create-a-virtual-environment)
+    * [Install `pyspark` and other dependencies](#install-pyspark-and-other-dependencies)
+  * [Test out basic pyspark run](#test-out-basic-pyspark-run)
+<!-- TOC -->
+
 Running PySpark requires is difficult because it requires three components:
 1. Java 
 2. Scala
@@ -172,6 +189,24 @@ brew install python@3.11
 #  brew reinstall python@3.11
 ```
 
+Find the path of brew-installed Python 3.11. If `python3.11` executable is not in your 
+`PATH`, edit your path to include `/opt/homebrew/bin`. 
+```shell
+# It's typically better to prepend /opt/homebrew/bin to PATH
+# For fish shell 
+set -g -x PATH /opt/homebrew/bin $PATH
+
+# For bash
+export PATH="/opt/homebrew/bin:$PATH"
+
+# Check
+echo $PATH
+# ... /opt/homebrew/bin ... /usr/bin /bin /usr/sbin /sbin ... 
+
+which python3.11
+# /opt/homebrew/bin/python3.11
+```
+
 ## Scala does not need to be explicitly installed
 Scala would be provided by the `pyspark` package.
 
@@ -180,12 +215,14 @@ Scala would be provided by the `pyspark` package.
 Create a virtual environment using your favorite package.
 Here, we use [virtualfish](https://github.com/justinmayer/virtualfish).
 ```shell
-vf new pyspark
+vf new pyspark -p python3.11
 vf deactivate
 
 # You can reuse the virtual environment `pyspark` anytime  
 vf activate pyspark
-# Run your python code
+python --version
+# Python 3.11.4 
+# ... run your python code here ...
 vf deactivate
 ```
 
@@ -239,3 +276,25 @@ ls /Users/ankur/.virtualenvs/pyspark/lib/python3.11/site-packages/pyspark/jars |
 # spark-yarn_2.12-3.4.1.jar
 ```
 
+## Test out basic pyspark run
+The basic run does not include any jars needed for additional activities like accessing data over S3.
+This is how a successful run should look like.
+```shell
+# Still within the virtual environment
+python run_basic_pyspark.py
+# 23/08/17 22:11:34 WARN Utils: Your hostname, greyshark.local resolves to a loopback address: 127.0.0.1; using 192.168.1.7 instead (on interface en0)
+# 23/08/17 22:11:34 WARN Utils: Set SPARK_LOCAL_IP if you need to bind to another address
+# Setting default log level to "WARN".
+# To adjust logging level use sc.setLogLevel(newLevel). For SparkR, use setLogLevel(newLevel).
+# 23/08/17 22:11:34 WARN NativeCodeLoader: Unable to load native-hadoop library for your platform... using builtin-java classes where applicable
+# 23/08/17 22:11:34 WARN Utils: Service 'SparkUI' could not bind on port 4040. Attempting port 4041.
+# +---+---+
+# |  x|  y|
+# +---+---+
+# |  0|  0|
+# |  1|  1|
+# |  2|  2|
+# |  3|  3|
+# |  4|  4|
+# +---+---+
+```
