@@ -37,12 +37,14 @@ version of Spark and maven coordinates of Spark. As of Aug 17, 2023, these were 
 [Maven](https://search.maven.org/search?q=g:org.apache.spark) coordinates:
 ```
 groupId: org.apache.spark
-artifactId: spark-core_2.12  # <- 2.12 is the Scala version
-version: 3.4.1  # <- spark version as well as pyspark version
+artifactId: spark-core_2.12  
+version: 3.4.1
 ```
-Typically, Spark and PySpark versions are the same. For example, PySpark 3.4.1 
-corresponds to Spark 3.4.1. We now know the Scala version needed. You may be more 
-familiar with seeing the above in `pom.xml` format:
+The `version` refers to both spark (jar) and pyspark (wheel) versions, which are typically the same. 
+For example, PySpark 3.4.1 corresponds to Spark 3.4.1. 
+The suffix `2.12` in `artifactId` is the Scala version. 
+
+You may be more familiar with Maven coordinates in `pom.xml` format:
 ```xml
 <dependency>
     <groupId>org.apache.spark</groupId>
@@ -276,9 +278,11 @@ ls /Users/ankur/.virtualenvs/pyspark/lib/python3.11/site-packages/pyspark/jars |
 # spark-yarn_2.12-3.4.1.jar
 ```
 
-## Test out basic pyspark run
+## Run pyspark without any extra packages
 The basic run does not include any jars needed for additional activities like accessing data over S3.
 This is how a successful run should look like.
+Note that we set `JAVA_HOME` to `/opt/homebrew/opt/openjdk@17` in `run_basic_pyspark.py`.
+
 ```shell
 # Still within the virtual environment
 python run_basic_pyspark.py
@@ -298,3 +302,62 @@ python run_basic_pyspark.py
 # |  4|  4|
 # +---+---+
 ```
+
+If this step fails, please check your versions again. Do not proceed to the next step which will have even more 
+perplexing errors.
+
+## Failures
+Debugging failures is necessary (not just desirable) skill when using pyspark. Most errors happen because of one of 
+these reasons. 
+1. Missing dependencies
+2. Wrong dependency versions 
+3. Multiple versions of the same dependency in the classpath 
+4. Wrong Java, Scala, or Python versions
+5. Not setting the environment variables (eg: `JAVA_HOME`) before starting a pyspark session
+
+### Try to read parquet from S3
+For this demo, let's find publicly available parquet data on S3 from 
+[Registry of Open Data on AWS](https://registry.opendata.aws/). After searching for "parquet", let's use 
+[Genome Aggregation Database (gnomAD)](https://registry.opendata.aws/gnomad-data-lakehouse-ready/) dataset,
+which contains the S3 URI.
+
+You need to have [AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html) installed.
+On MacOS (Apple Silicon), AWS CLI is best installed via the GUI route (`AWSCLIV2.pkg`).
+
+Let's check the data we want to read using pyspark:
+```shell
+aws s3 ls --no-sign-request s3://aws-roda-hcls-datalake/gnomad/chrm/
+# 2021-09-08 12:22:56     260887 run-DataSink0-1-part-block-0-r-00000-snappy.parquet
+# ...
+# 2021-09-08 12:22:55     263581 run-DataSink0-1-part-block-0-r-00019-snappy.parquet
+```
+
+Now, let's run `fail_s3_spark.py` and see the failure. 
+```shell
+python fail_s3_spark.py
+# 23/08/17 22:47:32 WARN FileStreamSink: Assume no metadata directory. Error while looking for metadata directory in the path: s3a://aws-roda-hcls-datalake/gnomad/chrm/*.parquet.
+# java.lang.RuntimeException: java.lang.ClassNotFoundException: Class org.apache.hadoop.fs.s3a.S3AFileSystem not found
+# 	at org.apache.hadoop.conf.Configuration.getClass(Configuration.java:2688)
+#     ...
+# Caused by: java.lang.ClassNotFoundException: Class org.apache.hadoop.fs.s3a.S3AFileSystem not found
+```
+
+This error is caused by the [lack](https://stackoverflow.com/questions/58415928/spark-s3-error-java-lang-classnotfoundexception-class-org-apache-hadoop-f) 
+of `org.apache.hadoop:hadoop-aws` jar. In order to use additional features like accessing data from S3, we need to 
+start the pyspark session with the relevant jars. We don't need to download the jars manually, but we need to specify 
+the maven coordinates of the jars in the correct format. Most importantly, we need to find the correct version 
+of `org.apache.hadoop:hadoop-aws` jar.
+
+https://central.sonatype.com/artifact/org.apache.spark/spark-core_2.12/3.4.1
+
+https://central.sonatype.com/artifact/org.apache.hadoop/hadoop-aws/3.3.4
+
+
+
+
+### Use pyspark with packages
+ We specify these dependencies (jars) in `run_s3_spark.py` itself.
+
+Find the correct Maven coordinates for the jars is extremely important.
+
+
