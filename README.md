@@ -36,6 +36,12 @@ This repository aims to provide
 This repository supports MacOS (Apple Silicon) and Linux (Ubuntu) but may work on other 
 operating system and architectures. 
 
+If you're in a rush, see these files first:
+1. `run_basic_pyspark.py`
+2. `run_s3_spark.py`
+
+Rest of the README describes the process and shows some failures and how to debug them. 
+
 ## Get the Maven coordinates for Spark
 Start at the Apache Spark [download](https://spark.apache.org/downloads.html) page. Note the 
 version of Spark and maven coordinates of Spark. As of Aug 17, 2023, these were the 
