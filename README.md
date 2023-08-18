@@ -18,7 +18,7 @@
     * [Try to read parquet from S3](#try-to-read-parquet-from-s3)
     * [Second attempt at reading parquet from S3](#second-attempt-at-reading-parquet-from-s3)
     * [Third attempt](#third-attempt)
-  * [Works](#works)
+  * [Success](#success)
 <!-- TOC -->
 
 Running PySpark requires is difficult because it requires three components:
@@ -447,7 +447,7 @@ python fail_s3_spark_3.py
 This is a poorly phrased error which can send us down the wrong rabbit hole. Turns out, we just need to 
 [add a session token](https://stackoverflow.com/a/47479139/4383754) as well.
 
-## Works
+## Success
 Let's add our AWS access key, AWS secret key, and AWS session token.
 ```python
 # From run_s3_spark.py
