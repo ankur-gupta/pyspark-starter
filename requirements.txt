@@ -1,0 +1,11 @@
+pyspark
+ujson
+numpy
+pandas
+matplotlib
+seaborn
+
+# For development only
+ipython
+jupyter
+ipdb
