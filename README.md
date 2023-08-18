@@ -419,6 +419,12 @@ may be necessary.
 
 ### Third attempt
 Let's add our AWS access and secret keys. 
+```python
+# From fail_s3_spark_3.py
+os.environ['AWS_ACCESS_KEY'] = '<access-key>'
+os.environ['AWS_SECRET_KEY'] = '<secret-key>'
+```
+
 ```shell
 python fail_s3_spark_3.py
 # ...
@@ -437,6 +443,13 @@ This is a poorly phrased error which can send us down the wrong rabbit hole. Tur
 
 ## Works
 Let's add our AWS access key, AWS secret key, and AWS session token.
+```python
+# From run_s3_spark.py
+os.environ['AWS_ACCESS_KEY'] = '<access-key>'
+os.environ['AWS_SECRET_KEY'] = '<secret-key>'
+os.environ['AWS_SESSION_TOKEN'] = '<session-token>'
+```
+
 ```shell
 python run_s3_spark.py
 # 23/08/17 23:23:16 WARN MetricsConfig: Cannot locate configuration: tried hadoop-metrics2-s3a-file-system.properties,hadoop-metrics2.properties
@@ -451,3 +464,5 @@ python run_s3_spark.py
 # +-----------+-----+-------------+
 # only showing top 5 rows
 ```
+
+Note that `Cannot locate configuration` warning is annoying but usually not important.
